@@ -1,0 +1,23 @@
+[
+    {
+        "id": 1,
+        "nom": "Brasserie Dupont",
+        "ville": "Tourpes",
+        "pays": "Belgique",
+        "date_creation": "1844-12-16"
+    },
+    {
+        "id": 2,
+        "nom": "Brasserie de Rochefort",
+        "ville": "Rochefort",
+        "pays": "Belgique",
+        "date_creation": "1595-01-01"
+    },
+    {
+        "id": 3,
+        "nom": "Brasserie Cantillon",
+        "ville": "Bruxelles",
+        "pays": "Belgique",
+        "date_creation": "1900-01-01"
+    }
+]
