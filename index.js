@@ -31,10 +31,10 @@ app.get("/brasseries", async (req, res) => {
   res.json(rows);
 });
 
-app.get("/brasseries/:id", async (req, res) => {
+app.get("/brasseries/:id_brasserie", async (req, res) => {
   const [rows] = await connection.execute(
-    "SELECT * FROM Brasserie WHERE id = ?",
-    [req.params.id]
+    "SELECT * FROM Brasserie WHERE id_brasserie = ?",
+    [req.params.id_brasserie]
   );
   if (rows.length > 0) {
     res.json(rows[0]);
@@ -54,27 +54,27 @@ app.post("/brasseries", async (req, res) => {
     ]
   );
   const [rows] = await connection.execute(
-    "SELECT * FROM Brasserie WHERE id = ?",
+    "SELECT * FROM Brasserie WHERE id_brasserie = ?",
     [result.insertId]
   );
   res.json(rows[0]);
 });
 
-app.put("/brasseries/:id", async (req, res) => {
+app.put("/brasseries/:id_brasserie", async (req, res) => {
   const [rows] = await connection.execute(
-    "UPDATE Brasserie SET nom_brasserie = ?, ville = ?, pays = ?, date_creation = ? WHERE id = ?",
+    "UPDATE Brasserie SET nom_brasserie = ?, ville = ?, pays = ?, date_creation = ? WHERE id_brasserie = ?",
     [
       req.body.nom_brasserie,
       req.body.ville,
       req.body.pays,
       req.body.date_creation,
-      req.params.id,
+      req.params.id_brasserie,
     ]
   );
   if (rows.affectedRows > 0) {
     const [updatedRows] = await connection.execute(
-      "SELECT * FROM Brasserie WHERE id = ?",
-      [req.params.id]
+      "SELECT * FROM Brasserie WHERE id_brasserie = ?",
+      [req.params.id_brasserie]
     );
     res.json(updatedRows[0]);
   } else {
@@ -82,15 +82,30 @@ app.put("/brasseries/:id", async (req, res) => {
   }
 });
 
-app.delete("/brasseries/:id", async (req, res) => {
-  const [rows] = await connection.execute(
-    "DELETE FROM Brasserie WHERE id = ?",
-    [req.params.id]
-  );
-  if (rows.affectedRows > 0) {
-    res.send("Brasserie supprimée");
-  } else {
-    res.status(404).send("Brasserie non trouvée");
+app.delete("/brasseries/:id_brasserie", async (req, res) => {
+  try {
+    const [commands] = await connection.execute(
+      "SELECT * FROM Commande WHERE brasserie_id = ?",
+      [req.params.id_brasserie]
+    );
+    if (commands.length > 0) {
+      const [rows] = await connection.execute(
+        "DELETE FROM Commande WHERE brasserie_id = ?",
+        [req.params.id_brasserie]
+      );
+    }
+    const [rows] = await connection.execute(
+      "DELETE FROM Brasserie WHERE id_brasserie = ?",
+      [req.params.id_brasserie]
+    );
+    if (rows.affectedRows > 0) {
+      res.send("Brasserie supprimée");
+    } else {
+      res.status(404).send("Brasserie non trouvée");
+    }
+  } catch (err) {
+    console.log(err);
+    res.status(500).send("Erreur lors de la suppression de la brasserie");
   }
 });
 
@@ -100,10 +115,11 @@ app.get("/bieres", async (req, res) => {
   res.json(rows);
 });
 
-app.get("/bieres/:id", async (req, res) => {
-  const [rows] = await connection.execute("SELECT * FROM Biere WHERE id = ?", [
-    req.params.id,
-  ]);
+app.get("/bieres/:id_biere", async (req, res) => {
+  const [rows] = await connection.execute(
+    "SELECT * FROM Biere WHERE id_biere = ?",
+    [req.params.id_biere]
+  );
   if (rows.length > 0) {
     res.json(rows[0]);
   } else {
@@ -121,27 +137,28 @@ app.post("/bieres", async (req, res) => {
       req.body.brasserie_id,
     ]
   );
-  const [rows] = await connection.execute("SELECT * FROM Biere WHERE id = ?", [
-    result.insertId,
-  ]);
+  const [rows] = await connection.execute(
+    "SELECT * FROM Biere WHERE id_biere = ?",
+    [result.insertId]
+  );
   res.json(rows[0]);
 });
 
-app.put("/bieres/:id", async (req, res) => {
+app.put("/bieres/:id_biere", async (req, res) => {
   const [rows] = await connection.execute(
-    "UPDATE Biere SET nom_biere = ?, type = ?, degre_alcool = ?, brasserie_id = ? WHERE id = ?",
+    "UPDATE Biere SET nom_biere = ?, type = ?, degre_alcool = ?, brasserie_id = ? WHERE id_biere = ?",
     [
       req.body.nom_biere,
       req.body.type,
       req.body.degre_alcool,
       req.body.brasserie_id,
-      req.params.id,
+      req.params.id_biere,
     ]
   );
   if (rows.affectedRows > 0) {
     const [updatedRows] = await connection.execute(
-      "SELECT * FROM Biere WHERE id = ?",
-      [req.params.id]
+      "SELECT * FROM Biere WHERE id_biere = ?",
+      [req.params.id_biere]
     );
     res.json(updatedRows[0]);
   } else {
@@ -149,11 +166,20 @@ app.put("/bieres/:id", async (req, res) => {
   }
 });
 
-app.delete("/bieres/:id", async (req, res) => {
-  const [rows] = await connection.execute("DELETE FROM Biere WHERE id = ?", [
-    req.params.id,
-  ]);
-  if (rows.affectedRows > 0) {
+app.delete("/bieres/:id_biere", async (req, res) => {
+  // delete referencing rows in `Commande_Biere` table first
+  const [cmdRows] = await connection.execute(
+    "DELETE FROM Commande_Biere WHERE id_biere = ?",
+    [req.params.id_biere]
+  );
+
+  // delete the row in `Biere` table
+  const [beerRows] = await connection.execute(
+    "DELETE FROM Biere WHERE id_biere = ?",
+    [req.params.id_biere]
+  );
+
+  if (beerRows.affectedRows > 0) {
     res.send("Bière supprimée");
   } else {
     res.status(404).send("Bière non trouvée");
